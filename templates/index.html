@@ -31,7 +31,7 @@
             max-width: 800px;
             width: 100%;
             box-sizing: border-box;
-            overflow-y: auto; /* Added overflow-y to enable scrolling */
+            overflow-y: auto;
         }
 
         #chat-display {
@@ -97,6 +97,8 @@
         .bold-text {
             font-weight: bold;
         }
+
+        /* Your existing CSS styles here */
     </style>
 
     <script>
@@ -105,27 +107,57 @@
                 sendMessage();
             }
         }
-    </script>
-</head>
 
-<body onkeydown="handleKeyPress(event)">
-    <h1>Ghost AI Chat</h1>
+        function parseFullStops(message) {
+            // Add a line gap after full stops unless it's a dot point
+            return message.replace(/(?<!\d\.)\.(?!$)/g, '.<br>');
+        }
 
-    <div id="chat-container">
-        <div id="chat-display"></div>
-        <div id="user-input">
-            <input type="text" id="user-message" placeholder="Type your message...">
-            <button id="send-button" onclick="sendMessage()">Send</button>
-        </div>
-    </div>
 
-    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
-    <script>
+        function appendMessage(sender, message) {
+            var chatDisplay = document.getElementById('chat-display');
+            var messageElement = document.createElement('div');
+            messageElement.innerHTML = '<strong>' + sender + ':</strong> ' + parseBoldText(parseNumberedList(parseFullStops(message)));
+            chatDisplay.appendChild(messageElement);
+        }
+
+        function formatAndAppendMessage(sender, message) {
+            var chatDisplay = document.getElementById('chat-display');
+            var messageElement = document.createElement('div');
+
+            // Check for specific formatting cues and apply appropriate formatting
+            if (message.includes('You:') && message.includes('Ghost AI:')) {
+                // Detected explanatory text block
+                messageElement.innerHTML = '<div class="explanation-block">' + parseFullStops(message) + '</div>';
+            } else if (message.includes('```python')) {
+                // Detected Python code block
+                messageElement.innerHTML = '<strong>' + sender + ':</strong><div class="code-block">'
+                    + '<button class="copy-button" onclick="copyCode(this)">Copy</button>'
+                    + '<pre><code>' + extractCode(message) + '</code></pre></div>';
+            } else {
+                // If no specific formatting detected, display as a regular message
+                messageElement.innerHTML = '<strong>' + sender + ':</strong> ' + parseBoldText(parseNumberedList(parseFullStops(message)));
+            }
+
+            chatDisplay.appendChild(messageElement);
+        }
+
+        // Add this function at the end to call parseFullStops on existing messages
+        function parseExistingMessages() {
+            var chatDisplay = document.getElementById('chat-display');
+            var messages = chatDisplay.getElementsByTagName('div');
+            
+            for (var i = 0; i < messages.length; i++) {
+                var message = messages[i].innerText;
+                messages[i].innerHTML = parseFullStops(message);
+            }
+        }
+
         function sendMessage() {
             var userMessage = document.getElementById('user-message').value;
             appendMessage('You', userMessage);
             document.getElementById('user-message').value = '';
-    
+
             // Send user message to the server and get the response
             fetch('/send_message', {
                 method: 'POST',
@@ -142,45 +174,17 @@
                     scrollToBottom();
                 });
         }
-    
-        function appendMessage(sender, message) {
-            var chatDisplay = document.getElementById('chat-display');
-            var messageElement = document.createElement('div');
-            messageElement.innerHTML = '<strong>' + sender + ':</strong> ' + parseBoldText(parseNumberedList(message));
-            chatDisplay.appendChild(messageElement);
-        }
-    
-        function formatAndAppendMessage(sender, message) {
-            var chatDisplay = document.getElementById('chat-display');
-            var messageElement = document.createElement('div');
-    
-            // Check for specific formatting cues and apply appropriate formatting
-            if (message.includes('You:') && message.includes('Ghost AI:')) {
-                // Detected explanatory text block
-                messageElement.innerHTML = '<div class="explanation-block">' + message + '</div>';
-            } else if (message.includes('```python')) {
-                // Detected Python code block
-                messageElement.innerHTML = '<strong>' + sender + ':</strong><div class="code-block">'
-                    + '<button class="copy-button" onclick="copyCode(this)">Copy</button>'
-                    + '<pre><code>' + extractCode(message) + '</code></pre></div>';
-            } else {
-                // If no specific formatting detected, display as a regular message
-                messageElement.innerHTML = '<strong>' + sender + ':</strong> ' + parseBoldText(parseNumberedList(message));
-            }
-    
-            chatDisplay.appendChild(messageElement);
-        }
-    
+
         function extractCode(message) {
             // Extract code between triple backticks
             var match = /```python([\s\S]*?)```/.exec(message);
             return match ? match[1].trim() : '';
         }
-    
+
         function copyCode(button) {
             var codeBlock = $(button).next().find('code');
             var codeText = codeBlock.text();
-    
+
             // Copy code to clipboard
             navigator.clipboard.writeText(codeText)
                 .then(() => {
@@ -193,31 +197,42 @@
                     console.error('Unable to copy code to clipboard:', err);
                 });
         }
-    
+
         function scrollToBottom() {
             var chatDisplay = document.getElementById('chat-display');
             chatDisplay.scrollTop = chatDisplay.scrollHeight;
         }
-    
+
         function parseBoldText(message) {
             // Replace **text** with bold text
             return message.replace(/\*\*(.*?)\*\*/g, '<span class="bold-text">$1</span>');
         }
-    
+
         function parseNumberedList(message) {
             // Format numbered lists with a space between each statement
             return message.replace(/(?:^|\n)(\d+\.)\s*(.*?)$/gm, '$1 $2 <br><br>');
         }
 
-
+        // Call the function to parse existing messages
+        parseExistingMessages();
     </script>
-    
-    
-    
-    
+
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 
     <!-- Updated version number -->
-    <div style="text-align: center; margin-top: 20px; color: #aaaaaa;">Version: v1.2.1</div>
+    <div style="text-align: center; margin-top: 20px; color: #aaaaaa;">Version: v1.3.1</div>
+</head>
+
+<body onkeydown="handleKeyPress(event)">
+    <h1>Ghost AI Chat</h1>
+
+    <div id="chat-container">
+        <div id="chat-display"></div>
+        <div id="user-input">
+            <input type="text" id="user-message" placeholder="Type your message...">
+            <button id="send-button" onclick="sendMessage()">Send</button>
+        </div>
+    </div>
 </body>
 
 </html>
