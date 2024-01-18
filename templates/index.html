@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GhostAi</title>
+    <title>Ghost AI Chat</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.8/clipboard.min.js">
     <style>
         body {
@@ -31,6 +31,7 @@
             max-width: 800px;
             width: 100%;
             box-sizing: border-box;
+            overflow-y: auto; /* Added overflow-y to enable scrolling */
         }
 
         #chat-display {
@@ -77,7 +78,7 @@
             border-radius: 5px;
             padding: 10px;
             margin-bottom: 10px;
-            overflow-x: auto; /* Enable horizontal scroll if needed */
+            overflow-x: auto;
         }
 
         .copy-button {
@@ -92,6 +93,10 @@
         .copy-button:hover {
             background-color: #3367d6;
         }
+
+        .bold-text {
+            font-weight: bold;
+        }
     </style>
 
     <script>
@@ -104,7 +109,7 @@
 </head>
 
 <body onkeydown="handleKeyPress(event)">
-    <h1>Google AI Chat</h1>
+    <h1>Ghost AI Chat</h1>
 
     <div id="chat-container">
         <div id="chat-display"></div>
@@ -120,7 +125,7 @@
             var userMessage = document.getElementById('user-message').value;
             appendMessage('You', userMessage);
             document.getElementById('user-message').value = '';
-
+    
             // Send user message to the server and get the response
             fetch('/send_message', {
                 method: 'POST',
@@ -132,23 +137,25 @@
                 .then(response => response.json())
                 .then(data => {
                     var modelResponse = data.response;
-                    formatAndAppendMessage('AI', modelResponse);
+                    formatAndAppendMessage('Ghost AI', modelResponse);
+                    // Scroll to the bottom after adding a new message
+                    scrollToBottom();
                 });
         }
-
+    
         function appendMessage(sender, message) {
             var chatDisplay = document.getElementById('chat-display');
             var messageElement = document.createElement('div');
-            messageElement.innerHTML = '<strong>' + sender + ':</strong> ' + message;
+            messageElement.innerHTML = '<strong>' + sender + ':</strong> ' + parseBoldText(parseNumberedList(message));
             chatDisplay.appendChild(messageElement);
         }
-
+    
         function formatAndAppendMessage(sender, message) {
             var chatDisplay = document.getElementById('chat-display');
             var messageElement = document.createElement('div');
-
+    
             // Check for specific formatting cues and apply appropriate formatting
-            if (message.includes('You:') && message.includes('AI:')) {
+            if (message.includes('You:') && message.includes('Ghost AI:')) {
                 // Detected explanatory text block
                 messageElement.innerHTML = '<div class="explanation-block">' + message + '</div>';
             } else if (message.includes('```python')) {
@@ -158,22 +165,22 @@
                     + '<pre><code>' + extractCode(message) + '</code></pre></div>';
             } else {
                 // If no specific formatting detected, display as a regular message
-                messageElement.innerHTML = '<strong>' + sender + ':</strong> ' + message;
+                messageElement.innerHTML = '<strong>' + sender + ':</strong> ' + parseBoldText(parseNumberedList(message));
             }
-
+    
             chatDisplay.appendChild(messageElement);
         }
-
+    
         function extractCode(message) {
             // Extract code between triple backticks
             var match = /```python([\s\S]*?)```/.exec(message);
             return match ? match[1].trim() : '';
         }
-
+    
         function copyCode(button) {
             var codeBlock = $(button).next().find('code');
             var codeText = codeBlock.text();
-
+    
             // Copy code to clipboard
             navigator.clipboard.writeText(codeText)
                 .then(() => {
@@ -186,7 +193,31 @@
                     console.error('Unable to copy code to clipboard:', err);
                 });
         }
+    
+        function scrollToBottom() {
+            var chatDisplay = document.getElementById('chat-display');
+            chatDisplay.scrollTop = chatDisplay.scrollHeight;
+        }
+    
+        function parseBoldText(message) {
+            // Replace **text** with bold text
+            return message.replace(/\*\*(.*?)\*\*/g, '<span class="bold-text">$1</span>');
+        }
+    
+        function parseNumberedList(message) {
+            // Format numbered lists with a space between each statement
+            return message.replace(/(?:^|\n)(\d+\.)\s*(.*?)$/gm, '$1 $2 <br><br>');
+        }
+
+
     </script>
+    
+    
+    
+    
+
+    <!-- Updated version number -->
+    <div style="text-align: center; margin-top: 20px; color: #aaaaaa;">Version: v1.2.1</div>
 </body>
 
 </html>
