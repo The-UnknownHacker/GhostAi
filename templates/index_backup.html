@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google AI Chat</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.8/clipboard.min.js">
+    <style>
+    body {
+        background-color: #121212;
+        color: #ffffff;
+        font-family: 'Arial', sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+    }
+
+    h1 {
+        color: #4285F4;
+        margin-bottom: 20px;
+    }
+
+    #chat-container {
+        background-color: #1E1E1E;
+        padding: 20px;
+        border-radius: 10px;
+        max-width: 800px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    #chat-display {
+        margin-bottom: 10px;
+    }
+
+    #user-input {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+    }
+
+    #user-message {
+        width: 100%;
+        padding: 10px;
+        border: none;
+        border-radius: 5px;
+        margin-bottom: 10px;
+        background-color: #2C2C2C;
+        color: #ffffff;
+    }
+
+    #user-message::placeholder {
+        color: #aaaaaa;
+    }
+
+    #send-button {
+        width: 100%;
+        padding: 10px;
+        border: none;
+        border-radius: 5px;
+        background-color: #4285F4;
+        color: #ffffff;
+        cursor: pointer;
+    }
+
+    #send-button:hover {
+        background-color: #3367d6;
+    }
+
+    .code-block {
+        background-color: #2C2C2C;
+        border-radius: 5px;
+        padding: 10px;
+        margin-bottom: 10px;
+        overflow-x: auto; /* Enable horizontal scroll if needed */
+    }
+
+    .copy-button {
+        background-color: #4285F4;
+        color: #ffffff;
+        padding: 5px;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+    }
+
+    .copy-button:hover {
+        background-color: #3367d6;
+    }
+</style>
+</head>
+
+<body>
+    <h1>Google AI Chat</h1>
+
+    <div id="chat-container">
+        <div id="chat-display"></div>
+        <div id="user-input">
+            <input type="text" id="user-message" placeholder="Type your message...">
+            <button id="send-button" onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script>
+        function sendMessage() {
+            var userMessage = document.getElementById('user-message').value;
+            appendMessage('You', userMessage);
+            document.getElementById('user-message').value = '';
+
+            // Send user message to the server and get the response
+            fetch('/send_message', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: 'user_input=' + userMessage,
+                })
+                .then(response => response.json())
+                .then(data => {
+                    var modelResponse = data.response;
+                    formatAndAppendMessage('AI', modelResponse);
+                });
+        }
+
+        function appendMessage(sender, message) {
+            var chatDisplay = document.getElementById('chat-display');
+            var messageElement = document.createElement('div');
+            messageElement.innerHTML = '<strong>' + sender + ':</strong> ' + message;
+            chatDisplay.appendChild(messageElement);
+        }
+
+        function formatAndAppendMessage(sender, message) {
+            var chatDisplay = document.getElementById('chat-display');
+            var messageElement = document.createElement('div');
+
+            // Check for specific formatting cues and apply appropriate formatting
+            if (message.includes('You:') && message.includes('AI:')) {
+                // Detected explanatory text block
+                messageElement.innerHTML = '<div class="explanation-block">' + message + '</div>';
+            } else if (message.includes('```python')) {
+                // Detected Python code block
+                messageElement.innerHTML = '<strong>' + sender + ':</strong><div class="code-block">'
+                    + '<button class="copy-button" onclick="copyCode(this)">Copy</button>'
+                    + '<pre><code>' + extractCode(message) + '</code></pre></div>';
+            } else {
+                // If no specific formatting detected, display as regular message
+                messageElement.innerHTML = '<strong>' + sender + ':</strong> ' + message;
+            }
+
+            chatDisplay.appendChild(messageElement);
+        }
+
+        function extractCode(message) {
+            // Extract code between triple backticks
+            var match = /```python([\s\S]*?)```/.exec(message);
+            return match ? match[1].trim() : '';
+        }
+
+        function copyCode(button) {
+            var codeBlock = $(button).next().find('code');
+            var codeText = codeBlock.text();
+
+            // Copy code to clipboard
+            navigator.clipboard.writeText(codeText)
+                .then(() => {
+                    button.innerText = 'Copied';
+                    setTimeout(() => {
+                        button.innerText = 'Copy';
+                    }, 1500);
+                })
+                .catch(err => {
+                    console.error('Unable to copy code to clipboard:', err);
+                });
+        }
+    </script>
+</body>
+
+</html>
