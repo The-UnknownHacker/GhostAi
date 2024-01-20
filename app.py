@@ -277,6 +277,10 @@ convo = model.start_chat(history=[
 def home():
     return render_template('index.html')
 
+@app.route('/privacy')
+def Privacy():
+    return render_template('Privacy.html')
+
 @app.route('/send_message', methods=['POST'])
 def send_message():
     user_input = request.form.get('user_input')
