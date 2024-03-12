@@ -1,5 +1,10 @@
 # Google Gemini Based AI
 
+
+
+# This is now deprecated 
+# Check Out the latest version at  - [GhostAI](https://github.com/CyberZenDev/GhostAI).
+
 This AI requires an API key to run. Obtain your API key from [Google Maker Suite](https://makersuite.google.com/app/apikey).
 
 ## Setup
